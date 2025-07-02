@@ -1,0 +1,138 @@
+### Store memory
+POST http://localhost:8000/memory/store/1
+Content-Type: application/json
+
+{
+  "content": "I spent $200 on a new smartwatch and I'm not sure it was a smart purchase.",
+  "timestamp": "2025-06-14T14:30:00"
+}
+
+### Search memory
+POST http://localhost:8000/memory/search/1
+Content-Type: application/json
+
+{
+  "query": "regret smartwatch purchase"
+}
+
+### Store memory
+POST http://localhost:8000/memory/store/1
+Content-Type: application/json
+
+{
+  "content": "User felt tempted to buy a new iPhone, AI advised waiting 24 hours.",
+  "timestamp": "2025-06-14T14:45:00"
+}
+
+### Search memory
+POST http://localhost:8000/memory/search/1
+Content-Type: application/json
+
+{
+  "query": "regret iPhone purchase"
+}
+
+### Nudge Check
+POST http://localhost:8000/memory/nudge/1
+Content-Type: application/json
+
+{
+  "spending_intent": "I want to buy a new iPhone"
+}
+
+### Nudge Check 2
+POST http://localhost:8000/memory/nudge/1
+Content-Type: application/json
+
+{
+  "spending_intent": "I'm thinking of booking a last-minute trip to Paris"
+}
+
+### Store memory
+POST http://localhost:8000/memory/store/1
+Content-Type: application/json
+
+{
+  "spending_event": "I bought an iPhone impulsively last month"
+}
+
+### Test: Store impulsive iPhone purchase memory
+POST http://localhost:8000/memory/store/1
+Content-Type: application/json
+
+{
+  "spending_event": "I bought an iPhone impulsively last month"
+}
+
+### Test: Nudge for similar iPhone purchase intent (correct path)
+POST http://localhost:8000/memory/nudge/1
+Content-Type: application/json
+
+{
+  "spending_intent": "I'm thinking of buying another iPhone"
+}
+
+### Test: Search for iPhone-related memories
+POST http://localhost:8000/memory/search/1
+Content-Type: application/json
+
+{
+  "query": "iPhone"
+}
+
+### Get nudge history for user 1
+GET http://localhost:8000/memory/nudge/history/1
+
+### Premium plan nudge test
+POST http://localhost:8000/memory/nudge/1
+Content-Type: application/json
+
+{
+  "spending_intent": "I'm thinking of buying a last-minute business-class ticket to Paris."
+}
+
+### Nudge test
+POST http://localhost:8000/memory/nudge/1
+Content-Type: application/json
+
+{
+  "spending_intent": "I'm thinking of buying a last-minute business-class ticket to Paris."
+}
+
+### Test Nudge with I.M.P.U.L.S.E. Detection (Simulate Impulsive Purchase)
+POST http://localhost:8000/memory/nudge/1
+Content-Type: application/json
+
+{
+  "spending_intent": "shoes bored true true 1 celebration just felt like it"
+}
+
+### Test Nudge with I.M.P.U.L.S.E. Detection (Emotional Sale Example)
+POST http://localhost:8000/memory/nudge/1
+Content-Type: application/json
+
+{
+  "spending_intent": "I'm feeling really down lately and just saw a huge limited-time sale on luxury sneakers. I know I already bought something this week, but this feels like a treat."
+}
+
+### Test Nudge with I.M.P.U.L.S.E. Detection (Designer Bag Scarcity Example)
+POST http://localhost:8000/memory/nudge/1
+Content-Type: application/json
+
+{
+  "spending_intent": "I’m feeling really anxious today and just saw an Instagram ad saying there’s only 1 designer bag left in stock. I haven’t bought anything since Friday, but this feels like something I deserve after this stressful week."
+}
+
+### Test Non-Impulsive Purchase
+POST http://localhost:8000/memory/nudge/1
+Content-Type: application/json
+
+{
+  "item_name": "groceries",
+  "mood": "neutral",
+  "pattern_match": false,
+  "urgency": false,
+  "last_purchase_days_ago": 6,
+  "situation": "normal errand",
+  "explanation": "needed for meal prep"
+}

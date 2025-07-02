@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Plaid Link Sandbox Test</title>
+    <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+  </head>
+  <body>
+    <button id="link-btn">Open Plaid Link</button>
+    <pre id="output"></pre>
+    <script>
+      // Replace this with your link_token from /plaid/link-token/create
+      var LINK_TOKEN = "link-sandbox-34aba022-1506-4541-8329-1543e79e435d"
+      var handler = Plaid.create({
+        token: LINK_TOKEN,
+        onSuccess: function(public_token, metadata) {
+          document.getElementById('output').textContent =
+            "Public Token: " + public_token + "\n" + JSON.stringify(metadata, null, 2);
+        },
+        onExit: function(err, metadata) {
+          if (err) alert("Error: " + err.display_message);
+        }
+      });
+      document.getElementById('link-btn').onclick = function() {
+        handler.open();
+      };
+    </script>
+  </body>
+</html>

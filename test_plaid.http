@@ -1,0 +1,37 @@
+### Create Plaid Link Token
+POST http://localhost:8000/plaid/link-token/create
+Content-Type: application/json
+
+### Exchange Public Token for Access Token
+POST http://localhost:8000/plaid/exchange-public-token
+Content-Type: application/json
+
+{
+  "public_token": "public-sandbox-dec6ce1d-12a5-4e88-ba96-9eedbaaf6ac4",
+  "user_id": 1
+}
+
+### Get Plaid Accounts
+GET http://localhost:8000/plaid/accounts?user_id=1
+Content-Type: application/json
+
+### Get Linked Bank Accounts
+GET http://localhost:8000/plaid/accounts
+
+### Get Recent Transactions from Plaid
+GET http://localhost:8000/plaid/transactions
+
+### Import Recent Transactions to Spending Logs
+POST http://localhost:8000/plaid/import-transactions
+Content-Type: application/json
+
+### Get AI Nudge Based on Recent Spending
+POST http://localhost:8000/memory/nudge/1
+Content-Type: application/json
+
+{
+  "spending_intent": "review"
+}
+
+### Send Weekly Report to User (Email Triggered)
+GET http://localhost:8000/report/weekly/1
