@@ -25,6 +25,8 @@ def smart_nudge(user_id: int, spending_intent: str, plan: str = "free") -> str:
                 similar_regret = results["documents"][0][idx]
                 break
     # Dynamic prompt based on plan
+    from utils.plan_features import sanitize_plan
+    plan = sanitize_plan(plan)
     if plan == "ultra":
         tone = "Be highly protective, assertive, and act like a strong financial guardian."
     elif plan == "premium":

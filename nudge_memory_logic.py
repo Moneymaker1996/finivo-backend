@@ -7,8 +7,14 @@ import chromadb
 from chromadb.config import Settings
 import os
 import logging
-from fastapi import APIRouter, HTTPException, Body
+from fastapi import APIRouter, HTTPException, Body, Depends
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+from utils.impulse_engine import scan_impulse_triggers
+from routers.memory import run_earn_persuasion
+
+# Typing imports for completeness
+from typing import Optional, Union, List, Dict, Any
 
 # --- Embedding-powered ChromaDB persistent client setup and memory functions ---
 try:
@@ -117,3 +123,76 @@ except Exception as e:
 
 router = APIRouter()
 
+class NudgeRequest(BaseModel):
+    item_name: str = ""
+    mood: str = ""
+    pattern: str = ""
+    urgency: bool = False
+    last_purchase_days: int = None
+    situation: str = ""
+    explanation: str = ""
+    spending_intent: str = ""
+
+@router.post("/nudge/{user_id}")
+async def nudge_user(user_id: int, body: NudgeRequest, db: Session = Depends(get_db)):
+    print("NUDGE ENDPOINT HIT")
+    from utils.plan_features import get_user_plan, get_plan_features
+    plan = get_user_plan(user_id, db)
+    plan_features = get_plan_features(plan)
+
+    # Merge NLP and structured logic: always run impulse and persuasion
+    payload = body.dict()
+    impulse_result = scan_impulse_triggers(payload)
+    tone = plan_features.get("ai_tone", "basic")
+    earn_result = run_earn_persuasion(body, tone)
+
+    # Nudge limit enforcement (example for Essential plan)
+    nudge_limit = plan_features.get("nudge_limit")
+    nudge_count = None
+    if nudge_limit:
+        from models import NudgeLog
+        from datetime import datetime
+        now = datetime.utcnow()
+        start_of_month = datetime(now.year, now.month, 1)
+        nudge_count = db.query(NudgeLog).filter(
+            NudgeLog.user_id == user_id,
+            NudgeLog.timestamp >= start_of_month
+        ).count()
+        if nudge_count >= nudge_limit:
+            return {
+                "plan": plan,
+                "message": f"[{plan.title()}] Monthly nudge limit reached. Consider upgrading for more support.",
+                "impulse": impulse_result,
+                "earn": earn_result,
+                "debug": {"nudge_count": nudge_count, "nudge_limit": nudge_limit}
+            }
+
+    # Compose nudge message
+    if impulse_result["is_impulsive"]:
+        persuasion_mode = True
+        nudge_message = earn_result.get("nudge") or "This seems impulsive. You might want to wait before buying."
+    else:
+        persuasion_mode = False
+        nudge_message = plan_features.get("fallback_responses", ["All clear. Just a gentle reminder to stay mindful."])[0]
+
+    # Log the nudge (optional, if you want to keep history)
+    # ...existing code for logging...
+
+    # Always return full context
+    response = {
+        "plan": plan,
+        "plan_features": plan_features,
+        "impulse": impulse_result,
+        "earn": earn_result,
+        "persuasion_mode": persuasion_mode,
+        "nudge_message": nudge_message,
+        "payload": payload,
+        "debug": {
+            "triggered_flags": impulse_result["triggered_flags"],
+            "reasoning": impulse_result["debug"],
+            "nudge_count": nudge_count,
+            "nudge_limit": nudge_limit
+        }
+    }
+    print("[NUDGE RESPONSE]", response)
+    return response

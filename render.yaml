@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: finivo-ai
+    env: python
+    region: oregon
+    plan: free
+    repo: https://github.com/<your-username>/<your-repo>
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -k uvicorn.workers.UvicornWorker main:app
+    envVars:
+      - key: META_ACCESS_TOKEN
+        sync: false
+      - key: META_VERIFY_TOKEN
+        sync: false
+      - key: PHONE_NUMBER_ID
+        sync: false
+      - key: META_WABA_ID
+        sync: false

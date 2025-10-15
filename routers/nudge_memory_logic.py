@@ -7,8 +7,16 @@ import chromadb
 from chromadb.config import Settings
 import os
 import logging
-from fastapi import APIRouter, HTTPException, Body
+from fastapi import APIRouter, HTTPException, Body, Depends
 from pydantic import BaseModel
+from schemas import NudgeRequest
+from database import get_db
+from utils.plan_features import get_plan_features, get_user_plan
+from sqlalchemy.orm import Session
+from models import User
+
+# Typing imports for completeness
+from typing import Optional, Union, List, Dict, Any
 
 # --- Embedding-powered ChromaDB persistent client setup and memory functions ---
 try:
@@ -117,3 +125,66 @@ except Exception as e:
 
 router = APIRouter()
 
+
+
+
+@router.post("/nudge/{user_id}")
+async def nudge_user(user_id: int, request: NudgeRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return {"error": "User not found"}
+
+    plan = get_user_plan(user_id, db)
+    if not plan:
+        return {"error": "User plan not found"}
+
+    plan_features = get_plan_features(plan)
+
+    # Always run impulse and earn logic
+    payload = request.dict()
+    from utils.impulse_engine import scan_impulse_triggers
+    from routers.memory import run_earn_persuasion
+    impulse_result = scan_impulse_triggers(payload)
+    tone = plan_features.get("ai_tone", "basic")
+    earn_result = run_earn_persuasion(request, tone)
+
+    # Compose nudge message based on plan tier and impulse
+    if impulse_result["is_impulsive"]:
+        persuasion_mode = True
+        if plan == "essential":
+            nudge_message = (
+                "This feels impulsive. Want to pause and revisit tomorrow? I can remind you if you want."
+            )
+        elif plan == "prestige":
+            nudge_message = (
+                "Impulse detected! Let's take a breather and reflect for 24 hours. If you want, I can help you set a reminder or talk through your reasons."
+            )
+        elif plan == "elite":
+            nudge_message = (
+                "I sense this is an impulse purchase. Let's dig deeper: Is this truly aligned with your goals, or is it a fleeting urge? I can bookmark this and check in with you tomorrow, or we can discuss your motivations in detail."
+            )
+        else:
+            nudge_message = "This seems impulsive. You might want to wait before buying."
+    else:
+        persuasion_mode = False
+        nudge_message = plan_features.get("fallback_responses", ["All clear. Just a gentle reminder to stay mindful."])[0]
+
+    # Build impulse summary (no debug info)
+    impulse_summary = {
+        "total_triggers": impulse_result["total_triggers"],
+        "is_impulsive": impulse_result["is_impulsive"],
+        "triggered_flags": impulse_result["triggered_flags"]
+    }
+
+    # Remove fallback responses from response if impulse detected
+    response = {
+        "plan": plan,
+        "plan_features": plan_features if not impulse_result["is_impulsive"] else {k: v for k, v in plan_features.items() if k != "fallback_responses"},
+        "impulse": impulse_summary,
+        "earn": earn_result,
+        "persuasion_mode": persuasion_mode,
+        "nudge_message": nudge_message,
+        "payload": payload
+    }
+    print("[NUDGE RESPONSE]", response)
+    return response

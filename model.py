@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Float, DateTime, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, DateTime, Text, Boolean
 from datetime import datetime
 from database import Base
 
@@ -9,6 +9,7 @@ class User(Base):
     name = Column(String, nullable=False)
     email = Column(String, unique=True, index=True)
     plan = Column(String, nullable=False)
+    voice_feature_enabled = Column(Boolean, default=False)  # True if user has voice feature
 
 class SpendingLog(Base):
     __tablename__ = "spending_logs"
@@ -39,3 +40,5 @@ class NudgeLog(Base):
     nudge_message = Column(Text, nullable=False)
     plan = Column(String, nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow)
+    voice_enabled = Column(Boolean, default=False)  # True if voice nudge delivered
+    source = Column(String, default="text")  # "text" or "voice"
