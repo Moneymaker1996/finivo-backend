@@ -1,0 +1,10 @@
+.env*
+.cache/
+chroma_storage/
+*.onnx
+*.tar.gz
+*.pth
+*.ckpt
+__pycache__/
+.env.bak
+
