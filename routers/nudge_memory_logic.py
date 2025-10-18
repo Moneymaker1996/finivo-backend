@@ -18,12 +18,17 @@ from models import User
 # Typing imports for completeness
 from typing import Optional, Union, List, Dict, Any
 
-# --- Embedding-powered ChromaDB persistent client setup and memory functions ---
+# --- Embedding-powered ChromaDB in-memory client setup and memory functions ---
 try:
     from sentence_transformers import SentenceTransformer
 
-    # Initialize ChromaDB persistent client using new API (v1.0+)
-    chroma_client = chromadb.PersistentClient(path="chroma_storage")
+    # Initialize ChromaDB in-memory client. This avoids persistent local storage on Render.
+    try:
+        chroma_client = chromadb.Client()
+    except Exception:
+        # Older versions may require Settings or fallback to default constructor
+        chroma_client = chromadb.Client()  # best-effort in-memory
+
     collection = chroma_client.get_or_create_collection(name="finivo_memory")
 
     # Load a local embedding model (e.g., all-MiniLM-L6-v2)
