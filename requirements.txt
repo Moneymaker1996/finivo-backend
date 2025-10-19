@@ -1,6 +1,5 @@
 fastapi
 uvicorn[standard]
-gunicorn
 requests
 SQLAlchemy
 psycopg2-binary
