@@ -1,5 +1,6 @@
 import os
 from fastapi import APIRouter, HTTPException, Request, Depends, Body
+from loguru import logger
 import logging
 from pydantic import BaseModel
 from plaid.api import plaid_api
@@ -103,7 +104,7 @@ async def exchange_public_token(request: Request):
     # Read raw body bytes first so we can log/redact before parsing.
     body_bytes = await request.body()
 
-    if os.getenv("DEBUG") == "1":
+        if os.getenv("DEBUG") == "1":
         try:
             preview = body_bytes.decode('utf-8', errors='replace')[:120]
         except Exception:
@@ -120,7 +121,10 @@ async def exchange_public_token(request: Request):
         except Exception:
             redacted = None
 
-        logging.getLogger(__name__).info(f"[DEBUG] exchange-public-token raw body length={len(body_bytes)} preview='{preview}'")
+        try:
+            logger.info(f"[DEBUG] exchange-public-token raw body length={len(body_bytes)} preview='{preview}'")
+        except Exception:
+            pass
 
     # Parse into pydantic model (perform validation here)
     try:
@@ -138,7 +142,10 @@ async def exchange_public_token(request: Request):
             exchange_response = client.item_public_token_exchange(exchange_request)
         except Exception as exc:
             # Log Plaid error info (no tokens)
-            logging.getLogger(__name__).warning(f"Plaid exchange exception: {repr(exc)}")
+            try:
+                logger.warning(f"Plaid exchange exception: {repr(exc)}")
+            except Exception:
+                pass
             raise HTTPException(status_code=502, detail="Plaid exchange failed")
 
         # In DEBUG/test mode, log non-secret Plaid response details for diagnostics
@@ -146,13 +153,19 @@ async def exchange_public_token(request: Request):
             try:
                 if isinstance(exchange_response, dict):
                     keys = list(exchange_response.keys())
-                    logging.getLogger(__name__).info(f"[DEBUG] Plaid response keys: {keys}")
-                    if exchange_response.get("error_code"):
-                        logging.getLogger(__name__).warning(f"[DEBUG] Plaid error_code: {exchange_response.get('error_code')} message: {exchange_response.get('error_message')}")
+                    try:
+                        logger.info(f"[DEBUG] Plaid response keys: {keys}")
+                        if exchange_response.get("error_code"):
+                            logger.warning(f"[DEBUG] Plaid error_code: {exchange_response.get('error_code')} message: {exchange_response.get('error_message')}")
+                    except Exception:
+                        pass
                 else:
                     # SDK object — try to introspect attributes without printing tokens
                     attrs = [a for a in dir(exchange_response) if not a.startswith('_')][:10]
-                    logging.getLogger(__name__).info(f"[DEBUG] Plaid SDK response attrs sample: {attrs}")
+                    try:
+                        logger.info(f"[DEBUG] Plaid SDK response attrs sample: {attrs}")
+                    except Exception:
+                        pass
             except Exception:
                 pass
 
@@ -200,12 +213,20 @@ async def exchange_public_token(request: Request):
                 new_token = models.UserPlaidToken(user_id=body.user_id, access_token=encrypted, item_id=item_id, key_version=key_version)
                 db.add(new_token)
             db.commit()
-        except Exception as e:
+            except Exception as e:
             db.rollback()
-            logging.getLogger(__name__).warning(f"DB persist error (no secrets): {e}")
+            try:
+                logger.warning(f"DB persist error (no secrets): {e}")
+            except Exception:
+                pass
             raise HTTPException(status_code=500, detail="Failed to persist token to DB")
         finally:
             db.close()
+
+        try:
+            logger.info(f"[Plaid] Stored token for User={body.user_id}")
+        except Exception:
+            pass
 
         return {"status": "success", "message": "Token stored successfully", "user_id": body.user_id}
     except HTTPException:
@@ -378,6 +399,10 @@ def import_transactions(user_id: int = 1):
 
         db.commit()
         db.close()
+        try:
+            logger.info(f"[Plaid] Imported={imported} for User={user_id}")
+        except Exception:
+            pass
         return {"imported": imported, "message": f"Imported {imported} transactions."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -467,6 +492,10 @@ def import_transactions(user_id: int = Body(...), transactions: list = Body(...)
                 user_name = user_row.name if user_row and hasattr(user_row, "name") else getattr(user_row, "email", "user")
                 purchase_name = tx_for_eval.get("item_name") or "this item"
                 earn_script = generate_earn_script(user_name=user_name, purchase=purchase_name, plan=plan)
+                try:
+                    logger.info(f"[EARN] Generated persuasion script for User={user_id}")
+                except Exception:
+                    pass
                 nudge = models.NudgeLog(
                     user_id=user_id,
                     spending_intent=purchase_name,

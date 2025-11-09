@@ -6,6 +6,7 @@ from utils.impulse import is_impulsive_purchase
 import json
 from utils.earn_engine import generate_earn_script
 from utils.db_types import assign_response_script
+from loguru import logger
 
 router = APIRouter(prefix="/spending", tags=["Spending"])
 
@@ -71,12 +72,24 @@ def create_spending_log(spending: schemas.SpendingLogCreate, db: Session = Depen
         db.commit()
         db.refresh(new_log)
 
+        # Operational log for structured tracing
+        try:
+            logger.info(f"[Spending] User={new_log.user_id} Decision={new_log.decision}")
+        except Exception:
+            pass
+
         user = db.query(models.User).filter(models.User.id == new_log.user_id).first()
         plan = user.plan if user and hasattr(user, "plan") else "free"
         # Generate internal E.A.R.N. persuasion script and store it in the nudge log (internal only)
         user_name = user.name if user and hasattr(user, "name") else getattr(user, "email", "user")
         purchase_name = new_log.item_name or "this item"
         earn_script = generate_earn_script(user_name=user_name, purchase=purchase_name, plan=plan)
+
+        # Note E.A.R.N. generation for observability
+        try:
+            logger.info(f"[EARN] Generated persuasion script for User={new_log.user_id}")
+        except Exception:
+            pass
 
         nudge = models.NudgeLog(
             user_id=new_log.user_id,

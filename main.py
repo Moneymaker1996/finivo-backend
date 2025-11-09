@@ -2,6 +2,8 @@ import os
 os.environ["OMP_NUM_THREADS"] = "1"
 
 from fastapi import FastAPI, Depends
+from loguru import logger
+import sys
 import logging
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine
@@ -13,6 +15,10 @@ import time
 
 # app instance
 app = FastAPI()
+
+# Configure Loguru for structured stdout logging (Cloud Run friendly)
+logger.remove()
+logger.add(sys.stdout, format="{time} | {level} | {message}", level="INFO")
 
 
 # Create DB tables on startup instead of at import time to avoid test ordering side-effects
@@ -28,15 +34,15 @@ def create_tables_on_startup():
             from app.startup.test_db_bootstrap import maybe_create_all_for_tests
 
             maybe_create_all_for_tests(_db.engine)
-            logging.getLogger(__name__).info("Test DB bootstrap completed (if applicable)")
+            logger.info("Test DB bootstrap completed (if applicable)")
         except Exception:
             # If the test bootstrap helper cannot run, log a warning but do not
             # prevent app startup from proceeding.
-            logging.getLogger(__name__).warning("Test DB bootstrap could not run", exc_info=True)
+            logger.warning("Test DB bootstrap could not run")
     except Exception:
         # Avoid startup failure if resolving the runtime DB engine fails in
         # certain test setups.
-        logging.getLogger(__name__).warning("Failed to resolve runtime DB engine during startup", exc_info=True)
+        logger.warning("Failed to resolve runtime DB engine during startup")
 
 # Mount static directory for audio and other static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -158,3 +164,6 @@ try:
 except Exception:
     # Do not let startup fail if the bootstrap module cannot be imported or runs into issues
     pass
+
+# Emit a startup-complete log for visibility in stdout (Cloud Run)
+logger.info("Finivo backend startup complete")
