@@ -23,7 +23,7 @@ import models
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel
-# Use the models module's Base for autogenerate support
+# Use the models module's Base for autogenerate support when available.
 try:
     target_metadata = models.Base.metadata
 except Exception:

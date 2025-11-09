@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from database import SessionLocal
-from models import User  # Fixed import
+from models import User
 
 # Create a new user for testing
 def add_test_user():

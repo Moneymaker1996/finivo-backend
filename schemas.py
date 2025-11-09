@@ -1,13 +1,10 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime, date
 
 
 class NudgeRequest(BaseModel):
-    # Simple sentence-style input
     spending_intent: Optional[str] = None
-
-    # I.M.P.U.L.S.E. breakdown (structured form)
     item_name: Optional[str] = None
     mood: Optional[str] = None
     pattern: Optional[str] = None
@@ -19,7 +16,7 @@ class NudgeRequest(BaseModel):
 
 class SpendingIntent(BaseModel):
     item_name: str
-    mood: Optional[str] = None
+    mood: str
     pattern: Optional[str] = None
     urgency: Optional[str] = None
     last_purchase: Optional[date] = None
@@ -38,19 +35,19 @@ class SpendingLogCreate(BaseModel):
     item_name: str
     amount: float
     decision: Optional[str] = "undecided"
-
-    # I.M.P.U.L.S.E. explicit fields (optional; clients should supply if available)
-    item_type: Optional[str] = None    # e.g., "need", "want", "luxury"
+    category: Optional[str] = None
+    comment: Optional[str] = None
+    description: Optional[str] = None
+    timestamp: Optional[datetime] = None
+    # Optional fields used by impulse detection
+    item_type: Optional[str] = None
     mood: Optional[str] = None
     pattern: Optional[str] = None
     urgency: Optional[bool] = None
     last_purchase: Optional[datetime] = None
+    last_purchase_days: Optional[int] = None
     situation: Optional[str] = None
     explanation: Optional[str] = None
-
-    # Backward-compatible proxies
-    category: Optional[str] = None
-    comment: Optional[str] = None
 
 
 class SpendingLogOut(BaseModel):
@@ -58,18 +55,8 @@ class SpendingLogOut(BaseModel):
     user_id: int
     item_name: str
     amount: float
-    decision: str
-    timestamp: datetime
-
-    # Expose the I.M.P.U.L.S.E. fields so clients can see what was evaluated
-    item_type: Optional[str] = None
-    mood: Optional[str] = None
-    pattern: Optional[str] = None
-    urgency: Optional[bool] = None
-    last_purchase: Optional[datetime] = None
-    situation: Optional[str] = None
-    explanation: Optional[str] = None
-
+    decision: Optional[str]
+    timestamp: Optional[datetime]
     category: Optional[str] = None
     comment: Optional[str] = None
 
@@ -77,16 +64,9 @@ class SpendingLogOut(BaseModel):
         from_attributes = True
 
 
-class SpendingLogResponse(SpendingLogCreate):
-    id: int
-
-    class Config:
-        from_attributes = True
-
-
 class UserMemoryCreate(BaseModel):
     content: str
-    timestamp: datetime
+    timestamp: Optional[datetime] = None
 
 
 class UserMemoryResponse(BaseModel):
@@ -101,20 +81,20 @@ class UserMemoryResponse(BaseModel):
 
 class NudgeLogCreate(BaseModel):
     user_id: int
-    spending_intent: str
-    nudge_message: str
-    plan: str
-    timestamp: datetime
-    source: str = "text"  # "text" or "voice"
+    spending_intent: Optional[str] = None
+    nudge_message: Optional[str] = None
+    plan: Optional[str] = None
+    timestamp: Optional[datetime] = None
+    source: str = "text"
 
 
 class NudgeLogResponse(BaseModel):
     id: int
     user_id: int
-    spending_intent: str
-    nudge_message: str
-    plan: str
-    timestamp: datetime
+    spending_intent: Optional[str]
+    nudge_message: Optional[str]
+    plan: Optional[str]
+    timestamp: Optional[datetime]
     source: str = "text"
 
     class Config:
