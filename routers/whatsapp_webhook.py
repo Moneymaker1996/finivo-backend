@@ -26,10 +26,18 @@ _load_dotenv()
 
 router = APIRouter()
 
-# Load verify token from environment
-META_VERIFY_TOKEN = os.getenv('META_VERIFY_TOKEN')
-
 logger = logging.getLogger('whatsapp_webhook')
+
+
+def _get_meta_verify_token():
+    """Return the META_VERIFY_TOKEN from the environment with surrounding
+    whitespace removed, or None if it's not set.
+
+    Reading the env var at request time and stripping prevents false mismatches
+    caused by accidental whitespace (and makes secret updates easier to test).
+    """
+    t = os.getenv('META_VERIFY_TOKEN')
+    return t.strip() if isinstance(t, str) and t.strip() else None
 
 @router.get('/whatsapp')
 async def verify_webhook(request: Request):
@@ -38,7 +46,10 @@ async def verify_webhook(request: Request):
     token = params.get('hub.verify_token')
     challenge = params.get('hub.challenge')
 
-    if mode == 'subscribe' and token and challenge and token == META_VERIFY_TOKEN:
+    expected = _get_meta_verify_token()
+    # Normalize incoming token and compare to the expected value from the
+    # environment. We avoid logging the token itself.
+    if mode == 'subscribe' and token and challenge and expected and token.strip() == expected:
         logger.info('[WhatsApp Webhook] Verification successful')
         return int(challenge) if challenge.isdigit() else challenge
     else:

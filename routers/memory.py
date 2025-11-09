@@ -3,7 +3,7 @@ from typing import Optional, Union, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from model import User, SpendingLog, NudgeLog
+from models import User, SpendingLog, NudgeLog
 from schemas import NudgeRequest, UserMemoryCreate, UserMemoryResponse, NudgeLogResponse
 from database import get_db
 from datetime import datetime
