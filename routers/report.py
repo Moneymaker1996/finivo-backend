@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from database import SessionLocal
-from model import SpendingLog, NudgeLog, User
+from models import SpendingLog, NudgeLog, User
 from email_utils import send_weekly_report_email
 from utils.plan_features import get_plan_features
 

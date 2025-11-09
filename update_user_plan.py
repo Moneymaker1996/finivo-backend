@@ -1,7 +1,7 @@
 import sys
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from model import User
+from models import User
 
 # Correct PostgreSQL credentials
 DATABASE_URL = "postgresql://postgres:FinivoAIsecure2025@localhost/FinivoAI_DB"

@@ -4,8 +4,16 @@ os.environ["OMP_NUM_THREADS"] = "1"
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine
-import model as models, schemas
-from routers import user, spending, nudge_memory_logic, report, plaid, voice
+import models, schemas
+import routers.user as user
+import routers.spending as spending
+import routers.nudge_memory_logic as nudge_memory_logic
+import routers.report as report
+import routers.plaid as plaid
+import routers.voice as voice
+
+# Use the safe nudge inspection router implementation
+import routers.nudge_inspection as nudge_inspection
 from fastapi.staticfiles import StaticFiles
 import threading
 import time
@@ -21,6 +29,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(user.router)
 app.include_router(spending.router)
 app.include_router(nudge_memory_logic.router, prefix="/memory")
+app.include_router(nudge_inspection.router)
 app.include_router(report.router)
 app.include_router(plaid.router, prefix="/plaid")
 from routers.voice import router as voice_router

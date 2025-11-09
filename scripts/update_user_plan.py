@@ -1,7 +1,7 @@
 
 from sqlalchemy.orm import Session
 from database import SessionLocal
-import model as models
+import models
 
 def update_plan(user_id: int, new_plan: str):
     db: Session = SessionLocal()
