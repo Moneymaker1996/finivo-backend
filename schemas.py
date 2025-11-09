@@ -1,7 +1,7 @@
+from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime, date
 
-from pydantic import BaseModel, validator
-from typing import Optional, Union
-from datetime import date
 
 class NudgeRequest(BaseModel):
     # Simple sentence-style input
@@ -15,32 +15,43 @@ class NudgeRequest(BaseModel):
     last_purchase_days: Optional[int] = None
     situation: Optional[str] = None
     explanation: Optional[str] = None
-from pydantic import BaseModel
+
 
 class SpendingIntent(BaseModel):
-    item_name: str                # was 'item' before, fix to match input
-    mood: str
+    item_name: str
+    mood: Optional[str] = None
     pattern: Optional[str] = None
-    urgency: Optional[str] = None   # accept string like "only one left"
+    urgency: Optional[str] = None
     last_purchase: Optional[date] = None
     situation: Optional[str] = None
     explanation: Optional[str] = None
     user_id: Optional[int] = None
-from pydantic import BaseModel
-from typing import Optional
-from datetime import datetime
+
 
 class UserCreate(BaseModel):
     name: str
     email: str
+
 
 class SpendingLogCreate(BaseModel):
     user_id: int
     item_name: str
     amount: float
     decision: Optional[str] = "undecided"
-    category: Optional[str] = None  # New field for category
-    comment: Optional[str] = None   # New field for comment
+
+    # I.M.P.U.L.S.E. explicit fields (optional; clients should supply if available)
+    item_type: Optional[str] = None    # e.g., "need", "want", "luxury"
+    mood: Optional[str] = None
+    pattern: Optional[str] = None
+    urgency: Optional[bool] = None
+    last_purchase: Optional[datetime] = None
+    situation: Optional[str] = None
+    explanation: Optional[str] = None
+
+    # Backward-compatible proxies
+    category: Optional[str] = None
+    comment: Optional[str] = None
+
 
 class SpendingLogOut(BaseModel):
     id: int
@@ -49,18 +60,22 @@ class SpendingLogOut(BaseModel):
     amount: float
     decision: str
     timestamp: datetime
-    category: Optional[str] = None  # New field for category
-    comment: Optional[str] = None   # New field for comment
+
+    # Expose the I.M.P.U.L.S.E. fields so clients can see what was evaluated
+    item_type: Optional[str] = None
+    mood: Optional[str] = None
+    pattern: Optional[str] = None
+    urgency: Optional[bool] = None
+    last_purchase: Optional[datetime] = None
+    situation: Optional[str] = None
+    explanation: Optional[str] = None
+
+    category: Optional[str] = None
+    comment: Optional[str] = None
 
     class Config:
         from_attributes = True
 
-class SpendingLogCreate(BaseModel):
-    user_id: int
-    amount: float
-    category: str
-    description: str
-    timestamp: datetime
 
 class SpendingLogResponse(SpendingLogCreate):
     id: int
@@ -68,9 +83,11 @@ class SpendingLogResponse(SpendingLogCreate):
     class Config:
         from_attributes = True
 
+
 class UserMemoryCreate(BaseModel):
     content: str
     timestamp: datetime
+
 
 class UserMemoryResponse(BaseModel):
     id: int
@@ -81,6 +98,7 @@ class UserMemoryResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
 class NudgeLogCreate(BaseModel):
     user_id: int
     spending_intent: str
@@ -88,6 +106,7 @@ class NudgeLogCreate(BaseModel):
     plan: str
     timestamp: datetime
     source: str = "text"  # "text" or "voice"
+
 
 class NudgeLogResponse(BaseModel):
     id: int
@@ -100,6 +119,7 @@ class NudgeLogResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
 
 class PlanUpdateRequest(BaseModel):
     plan: str

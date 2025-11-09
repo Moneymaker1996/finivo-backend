@@ -1,6 +1,8 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Float, DateTime, Text, Boolean
 from datetime import datetime
 from database import Base
+from utils.db_types import json_type_for
+from database import engine
 
 class User(Base):
     __tablename__ = "users"
@@ -42,3 +44,9 @@ class NudgeLog(Base):
     timestamp = Column(DateTime, default=datetime.utcnow)
     voice_enabled = Column(Boolean, default=False)  # True if voice nudge delivered
     source = Column(String, default="text")  # "text" or "voice"
+    # Structured response script (JSONB on Postgres, TEXT on SQLite)
+    try:
+        _json_type = json_type_for(engine)
+    except Exception:
+        _json_type = Text
+    response_script = Column(_json_type, nullable=True)

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from database import SessionLocal
-import model as models
+import models
 
 if __name__ == "__main__":
     db: Session = SessionLocal()
