@@ -17,13 +17,18 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from database import DATABASE_URL
+from database import Base, DATABASE_URL
 import models
 
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel
-target_metadata = models.Base.metadata
+# Use the models module's Base for autogenerate support when available.
+try:
+    target_metadata = models.Base.metadata
+except Exception:
+    # Fallback to database.Base if models.Base is unavailable
+    target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

@@ -10,3 +10,4 @@ pydantic
 plaid-python
 email-validator
 sentence-transformers
+loguru
