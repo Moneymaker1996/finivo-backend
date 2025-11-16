@@ -7,13 +7,18 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Install dependencies only (no alembic, no tests)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Done
-        run: echo "CI workflow completed"
+      - name: CI Completed
+        run: echo "Finivo CI completed successfully"
