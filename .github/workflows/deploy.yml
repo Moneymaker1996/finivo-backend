@@ -1,46 +1,71 @@
-name: Deploy to Cloud Run
+name: Finivo CI Pipeline
 
 on:
   push:
     branches:
       - main
 
-env:
-  SERVICE_NAME: finivo-backend
-  REGION: asia-south1
-  PROJECT_ID: jovial-acronym-476213-q0
-  REPO: finivo-repo
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      # ------------------------------
+      # 1. Check out repo
+      # ------------------------------
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Set up gcloud CLI
-        uses: google-github-actions/setup-gcloud@v1
+      # ------------------------------
+      # 2. Authenticate to Google Cloud
+      # ------------------------------
+      - name: Google Auth
+        uses: google-github-actions/auth@v2
         with:
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
-          project_id: ${{ env.PROJECT_ID }}
+          credentials_json: "${{ secrets.GCP_SA_KEY }}"
 
-      - name: Configure Docker for Artifact Registry
-        run: |
-          gcloud auth configure-docker asia-south1-docker.pkg.dev --quiet
+      # ------------------------------
+      # 3. Set up gcloud CLI
+      # ------------------------------
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: "jovial-acronym-476213-q0"
 
+      # ------------------------------
+      # 4. Build Docker image locally
+      # ------------------------------
       - name: Build Docker image
         run: |
-          docker build -t asia-south1-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO }}/${{ env.SERVICE_NAME }}:${{ github.sha }} .
+          docker build \
+            -t asia-south1-docker.pkg.dev/jovial-acronym-476213-q0/finivo-repo/finivo-backend:latest \
+            .
 
-      - name: Push image to Artifact Registry
+      # ------------------------------
+      # 5. Authenticate Docker to Artifact Registry
+      # ------------------------------
+      - name: Docker auth
         run: |
-          docker push asia-south1-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
+          gcloud auth configure-docker asia-south1-docker.pkg.dev
 
+      # ------------------------------
+      # 6. Push image
+      # ------------------------------
+      - name: Push Image
+        run: |
+          docker push asia-south1-docker.pkg.dev/jovial-acronym-476213-q0/finivo-repo/finivo-backend:latest
+
+      # ------------------------------
+      # 7. Deploy to Cloud Run
+      # ------------------------------
       - name: Deploy to Cloud Run
         run: |
-          gcloud run deploy ${{ env.SERVICE_NAME }} \
-            --image asia-south1-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO }}/${{ env.SERVICE_NAME }}:${{ github.sha }} \
-            --region ${{ env.REGION }} \
+          gcloud run deploy finivo-backend \
+            --image asia-south1-docker.pkg.dev/jovial-acronym-476213-q0/finivo-repo/finivo-backend:latest \
+            --project jovial-acronym-476213-q0 \
+            --region asia-south1 \
             --platform managed \
-            --allow-unauthenticated
+            --allow-unauthenticated \
+            --set-secrets="DATABASE_URL=DATABASE_URL:latest" \
+            --add-cloudsql-instances="jovial-acronym-476213-q0:asia-south1:finivo-db" \
+            --memory=2Gi
