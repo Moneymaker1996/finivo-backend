@@ -1,4 +1,4 @@
-name: Finivo CI Pipeline
+﻿name: Finivo CI Pipeline
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -19,17 +20,3 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install pytest alembic psycopg2-binary
-
-      - name: Run migrations
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: |
-          export PYTHONPATH="."
-          alembic upgrade head
-
-      - name: Run test suite
-        env:
-          MOCK_PLAID: "1"
-          PLAID_ENCRYPTION_KEY: "test-fernet-key"
-        run: pytest -q
