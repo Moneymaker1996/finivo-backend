@@ -1,4 +1,4 @@
-name: Finivo CI Pipeline
+name: name: Finivo Deploy Pipeline
 
 on:
   push:
