@@ -1,13 +1,10 @@
-name: name: Finivo Deploy Pipeline
+name: Finivo Deploy Pipeline
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
 
     steps:
       # ------------------------------
